@@ -41,6 +41,7 @@
           !lib.any (p: rel == p || lib.hasPrefix "${p}/" rel) [
             "android"
             "ios"
+            "linux"
             "docs"
             ".github"
             "nix"
@@ -108,6 +109,25 @@
           ;
       };
 
+      # Linux 桌面预览（非支援平台；不入门禁）：debug + release 两 bundle。
+      linux = import ./nix/linux.nix {
+        inherit pkgsFlutter hermeticFlutter;
+        src = self;
+        autoPubspecLock = self + "/pubspec.lock";
+      };
+
+      # Linux 桌面互动开发 shell（密封 Flutter + 系统 sqlite）。
+      linuxShell = import ./nix/linux-shell.nix {
+        inherit pkgsFlutter hermeticFlutter;
+        sqliteAmalgamation = linux.sqliteAmalgamation;
+      };
+
+      # Linux 桌面无头 UI smoke（Xvfb + 软件 GL，不需宿主 GPU）。
+      linuxSmoke = import ./nix/linux-smoke.nix {
+        inherit pkgsFlutter;
+        linuxDebug = linux.debug;
+      };
+
       checks = import ./nix/checks.nix {
         inherit pkgsFlutter hermeticFlutter;
         src = checksSrc;
@@ -122,6 +142,7 @@
       devShells.${system} = {
         default = devshell;
         android = androidShell;
+        linux = linuxShell;
       };
 
       packages.${system} = {
@@ -135,6 +156,11 @@
         "test-agentcore" = checks.test-agentcore;
         # 已知红灯的 webdav 包测试（5 个陈旧用例）；不入门禁，仅提供一条命令回归。
         "test-webdav" = checks.test-webdav;
+        # Linux 桌面预览（非支援平台）：`.#linux` 是 debug 预览，`.#linux-release` 是 release。
+        linux = linux.debug;
+        linux-release = linux.release;
+        # 无头 UI smoke 包装器（Xvfb + 软件 GL）。
+        linux-smoke = linuxSmoke;
       };
 
       apps.${system} = {
@@ -155,6 +181,26 @@
           type = "app";
           program = "${testRunner}/bin/flutter-test";
           meta.description = "BeeCount 密封 flutter test 运行器（--no-pub，含 sqlite 运行库路径）";
+        };
+
+        # Linux 桌面预览（需显示器/GPU；无头环境用 `nix run .#linux-smoke`）。
+        linux-run = {
+          type = "app";
+          program = "${linux.debug}/bin/beecount";
+          meta.description = "BeeCount Linux 桌面 debug 预览（非支援平台）";
+        };
+
+        linux-release-run = {
+          type = "app";
+          program = "${linux.release}/bin/beecount";
+          meta.description = "BeeCount Linux 桌面 release 预览（非支援平台）";
+        };
+
+        # 无头 UI smoke：Xvfb + 软件 GL（llvmpipe），不需显示器/GPU。
+        linux-smoke = {
+          type = "app";
+          program = "${linuxSmoke}/bin/beecount-linux-smoke";
+          meta.description = "BeeCount Linux 桌面无头 UI smoke（Xvfb + 软件 GL）";
         };
       };
 
