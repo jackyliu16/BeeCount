@@ -332,6 +332,28 @@ Notes:
 - `analyze` is intentionally not a flake check yet: the repo still carries ~600 info/warning lint debts, and cross-package analysis inside the hermetic environment yields type-identity false positives (pub2nix installs path dependencies as standalone store packages), so only **errors** in `lib/` + `test/` are gated.
 - 5 cases in `packages/flutter_cloud_sync_webdav/test` still assert the old email sign-in behaviour while the implementation throws `UnsupportedError`; they stay out of the CI gate until aligned.
 
+#### Linux desktop preview (optional; not a supported platform)
+
+The Linux desktop target exists only for **UI smoke / development preview**. It is not a supported
+platform. Day-to-day verification still runs through the hermetic `flutter test` in
+`nix flake check` (headless: no display, and no `linux/` directory needed).
+
+```bash
+nix build .#linux              # Linux desktop debug preview (fastest)
+nix build .#linux-release      # Linux desktop release artifact (AOT)
+nix run   .#linux-run          # launch the debug preview on a real desktop (needs display/GPU)
+nix run   .#linux-smoke        # headless UI smoke: Weston headless + software GL (llvmpipe), no display/GPU
+nix develop .#linux            # interactive dev: flutter pub get && flutter run -d linux
+```
+
+Notes:
+
+- **Not gated**: `.#linux*` and `.#linux-smoke` are not part of `nix flake check` / CI, so native build time and platform-difference noise stay out of the gate.
+- **Not a supported platform**: plugins without a Linux implementation (`permission_handler`, `local_auth`, `webview_flutter`, `gal`, `image_cropper`, `flutter_image_compress`, `in_app_review`, `quick_actions`, `open_filex`, `home_widget`, `in_app_purchase_storekit`, …) throw `MissingPluginException` at runtime; most startup paths are already try/caught, and in practice only `home_widget` prints a warning.
+- **GL is bundled**: the `nix build` bundle ships GTK but no GL driver, and the host `/run/opengl-driver` mesa has a different glibc ABI than the hermetic bundle (loading it fails in practice), so a bare run reports “no available GL implementation”. `nix/linux.nix` therefore puts mesa + libglvnd from the same nixpkgs pin into `runtimeDependencies` and bakes `LIBGL_DRIVERS_PATH` / `__EGL_VENDOR_LIBRARY_DIRS` / `LIBGLX_VENDOR_LIBRARY_NAME` into the run wrapper. The preview target is mesa-only; NVIDIA's proprietary driver is out of scope. `.#linux-smoke` only adds a Weston headless compositor + `LIBGL_ALWAYS_SOFTWARE=1` on top for headless determinism.
+- **Preview window size**: the window opens at a phone logical size (dp). The preset ladder is 390x844 (mainstream modern) → 360x780 (most common Android width) → 320x568 (floor), picking the first that fits the current monitor workarea — in `linux/runner/my_application.cc` the window size *is* the Flutter viewport size (the Linux embedder treats the GTK allocation as logical size), so making the window physically bigger cannot “zoom” the UI. To try another size (e.g. 412x915): `BEECOUNT_PREVIEW_SIZE=412x915 nix run .#linux-run`. Startup logs the effective viewport in dp (`[preview] Flutter 视口 390 x 844 dp`) and updates it as you resize. To see it larger on a HiDPI screen without changing the layout, use `GDK_SCALE=2` (Flutter's pixel_ratio follows the GTK scale factor; the logical size stays the same).
+- **Offline sqlite**: the `sqlite3_flutter_libs` linux plugin downloads sqlite3 via CMake `FetchContent`, which fails in the network-less Nix sandbox. `nix/linux.nix` extracts the amalgamation source from `pkgsFlutter.sqlite.src` and points `BEECOUNT_SQLITE3_SOURCE_DIR` at it; `linux/CMakeLists.txt` overrides the FetchContent source. Non-Nix builds leave the variable unset and keep the original download behaviour.
+
 **Upgrading Flutter**: after editing `.fvmrc`, regenerate the hermetic data or flake evaluation will fail:
 
 ```bash
