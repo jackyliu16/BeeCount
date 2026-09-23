@@ -302,6 +302,44 @@ flutter run -d ios
 
 **注意**: 云服务配置通过应用内 UI 完成（个人中心 → 云服务），无需配置文件。
 
+### 使用 Nix 开发环境（可选）
+
+仓库提供 `flake.nix`，为 NixOS / Nix 用户提供**可复现的开发工具链**，并可构建与 `.fvmrc` 精确一致（Flutter 3.27.3）的**密封校验**。`.fvmrc` 始终是 Flutter 版本的唯一事实来源。
+
+```bash
+# 进入开发 shell（FVM + JDK17 + Android SDK/NDK + Python 等）
+nix develop
+
+# 首次仍需用 FVM 按 .fvmrc 安装 SDK
+fvm install && fvm flutter pub get
+```
+
+密封层（不依赖本机 Flutter；首次评估需联网抓取 pub 依赖，其后走 Nix store）：
+
+```bash
+nix run  .#flutter -- --version           # 密封 Flutter 3.27.3
+nix run  .#flutter -- pub get             # 生成 .dart_tool/package_config.json（给下面的运行器用）
+nix run  .#flutter-test -- test/utils     # 密封 flutter test：目录/单文件/单用例（-n '用例名'）
+nix build .#test                          # 全量密封测试门禁：根 test/ + packages/flutter_cloud_sync{,_supabase}/test
+nix build .#test-agentcore                # 纯 Dart 包 packages/agentcore（自带 pubspec.lock + dart test）
+nix build .#analyze                       # 密封 flutter analyze（只对 error 设门禁，范围 lib/ + test/）
+nix build .#test-webdav                   # 已知红灯：packages/flutter_cloud_sync_webdav/test 有 5 个陈旧用例
+nix flake check                           # Nix 层门禁（密封 test + test-agentcore）
+```
+
+说明：
+
+- `nix build .#test` 与 `test-agentcore` 都是 `nix flake check` 的一部分，改 `lib/**`、`test/**`、`packages/**` 会在 CI 的 Nix workflow 里跑。
+- `analyze` 暂不入门禁：仓库还有约 600 条 info/warning lint 债，且密封环境下对 `packages/**` 做跨包分析会因 pub2nix 把 path 依赖装成独立 store 包而产生类型 identity 伪错误，故只对 `lib/` + `test/` 的 **error** 设门禁。
+- `packages/flutter_cloud_sync_webdav/test` 的 5 个用例仍在断言旧的邮箱登录行为，实现已改为抛 `UnsupportedError`；对齐前它们不进 CI 门禁。
+
+**升级 Flutter 版本**：改 `.fvmrc` 后需同步生成密封数据，否则 flake 评估会报错：
+
+```bash
+nix/gen-flutter-version.sh <版本>   # 例如 3.27.3，需联网
+git add nix/flutter-versions/<版本>.json
+```
+
 ### 项目结构
 
 ```

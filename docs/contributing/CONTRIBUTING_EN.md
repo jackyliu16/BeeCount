@@ -301,6 +301,44 @@ flutter run -d ios
 
 **Note**: Cloud service configuration is done through the app's UI (Profile → Cloud Service). No configuration file needed.
 
+### Using the Nix dev environment (optional)
+
+The repo ships a `flake.nix` that gives NixOS / Nix users a **reproducible toolchain**, plus a **hermetic verification** path pinned to the exact Flutter version in `.fvmrc` (3.27.3). `.fvmrc` remains the single source of truth for the Flutter version.
+
+```bash
+# Enter the dev shell (FVM + JDK17 + Android SDK/NDK + Python, etc.)
+nix develop
+
+# First run still installs the SDK via FVM according to .fvmrc
+fvm install && fvm flutter pub get
+```
+
+Hermetic layer (no local Flutter needed; the first evaluation fetches pub dependencies over the network, then uses the Nix store):
+
+```bash
+nix run  .#flutter -- --version           # hermetic Flutter 3.27.3
+nix run  .#flutter -- pub get             # generate .dart_tool/package_config.json for the runner below
+nix run  .#flutter-test -- test/utils     # hermetic flutter test: dir / file / single case (-n 'name')
+nix build .#test                          # full hermetic test gate: test/ + packages/flutter_cloud_sync{,_supabase}/test
+nix build .#test-agentcore                # pure-Dart packages/agentcore (own pubspec.lock + dart test)
+nix build .#analyze                       # hermetic flutter analyze (errors only, scoped to lib/ + test/)
+nix build .#test-webdav                   # known-red: 5 stale cases in packages/flutter_cloud_sync_webdav/test
+nix flake check                           # Nix-level gate (hermetic test + test-agentcore)
+```
+
+Notes:
+
+- `nix build .#test` and `.#test-agentcore` are both part of `nix flake check`; changes under `lib/**`, `test/**`, `packages/**` run them in the CI Nix workflow.
+- `analyze` is intentionally not a flake check yet: the repo still carries ~600 info/warning lint debts, and cross-package analysis inside the hermetic environment yields type-identity false positives (pub2nix installs path dependencies as standalone store packages), so only **errors** in `lib/` + `test/` are gated.
+- 5 cases in `packages/flutter_cloud_sync_webdav/test` still assert the old email sign-in behaviour while the implementation throws `UnsupportedError`; they stay out of the CI gate until aligned.
+
+**Upgrading Flutter**: after editing `.fvmrc`, regenerate the hermetic data or flake evaluation will fail:
+
+```bash
+nix/gen-flutter-version.sh <version>   # e.g. 3.27.3 (needs network)
+git add nix/flutter-versions/<version>.json
+```
+
 ### Project Structure
 
 ```
