@@ -48,7 +48,8 @@ pkgs.mkShell (
       else
         echo "[beecount] 尚未安装项目 Flutter SDK。首次使用请运行："
         echo "[beecount]     fvm install && fvm flutter pub get"
-        echo "[beecount] 密封校验可直接用：nix build .#analyze .#test"
+        echo "[beecount] 密封门禁：nix flake check（test + test-agentcore）"
+        echo "[beecount] 密封单测：nix run .#flutter-test -- test/utils（单个文件/用例同样可用）"
       fi
     '';
   }

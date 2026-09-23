@@ -99,11 +99,23 @@
           ;
       };
 
+      # 密封单测运行器（`nix run .#flutter-test -- test/utils`）。
+      testRunner = import ./nix/test-runner.nix {
+        inherit
+          pkgs
+          pkgsFlutter
+          hermeticFlutter
+          ;
+      };
+
       checks = import ./nix/checks.nix {
         inherit pkgsFlutter hermeticFlutter;
         src = checksSrc;
         # 已实体化的 lock 源（不被收窄影响）。
         autoPubspecLock = self + "/pubspec.lock";
+        # packages/agentcore 是纯 Dart 包，用自己那棵子树 + 自己的 lock 独立校验。
+        agentcoreSrc = self + "/packages/agentcore";
+        agentcorePubspecLock = self + "/packages/agentcore/pubspec.lock";
       };
     in
     {
@@ -119,6 +131,10 @@
         # Android 工具链（unfree；仅作用于本 flake 实例）：供密封 SDK 做 `build apk`。
         inherit (android) androidSdk jdk17;
         inherit (checks) analyze test;
+        # 纯 Dart 包（packages/agentcore）的密封测试：用其自身 pubspec.lock + 密封 Dart SDK。
+        "test-agentcore" = checks.test-agentcore;
+        # 已知红灯的 webdav 包测试（5 个陈旧用例）；不入门禁，仅提供一条命令回归。
+        "test-webdav" = checks.test-webdav;
       };
 
       apps.${system} = {
@@ -133,13 +149,22 @@
           program = "${flutterAndroid}/bin/flutter";
           meta.description = "BeeCount 密封 Flutter ${flutterVersion}（Android 可写包装器）";
         };
+
+        # `nix run .#flutter-test -- test/utils`：密封 `flutter test`（单文件/单用例/目录）。
+        flutter-test = {
+          type = "app";
+          program = "${testRunner}/bin/flutter-test";
+          meta.description = "BeeCount 密封 flutter test 运行器（--no-pub，含 sqlite 运行库路径）";
+        };
       };
 
-      # `nix flake check` 只把密封 `test` 作为门禁。
-      # 严格 `analyze`（与 CI 的 `flutter analyze` 一致）另以
-      # `nix build .#analyze` 提供；待 lint 欠债清理完再移入 checks。
+      # `nix flake check` 门禁：密封 `test`（根 test/ + packages/*/test 中可由根 lock
+      # 解析的部分）与 `test-agentcore`（纯 Dart 包，走自己的 lock + dart test）。
+      # `analyze` 仅对 error 设门禁、范围 lib/ + test/（跨包分析在密封环境有
+      # path-依赖类型 identity 伪错误），以 `nix build .#analyze` 提供，暂不入 checks。
       checks.${system} = {
         inherit (checks) test;
+        "test-agentcore" = checks.test-agentcore;
       };
 
       formatter.${system} = pkgs.nixfmt;
