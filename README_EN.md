@@ -7,7 +7,7 @@
 ![Release](https://img.shields.io/github/v/release/TNT-Likely/BeeCount?label=latest&color=green)
 ![Downloads](https://img.shields.io/github/downloads/TNT-Likely/BeeCount/total?color=blue)
 ![Last commit](https://img.shields.io/github/last-commit/TNT-Likely/BeeCount)
-![Flutter](https://img.shields.io/badge/Flutter-3.27%2B-02569B?logo=flutter)
+![Flutter](https://img.shields.io/badge/Flutter-3.27.3-02569B?logo=flutter)
 
 **Your Data, Your Control — Open Source Accounting App**
 
@@ -221,7 +221,7 @@ Full Docker Compose deployment, backup system, PWA, and ops details live in the 
 
 ### Tech Stack
 
-- **Flutter 3.27+** · Cross-platform UI framework
+- **Flutter 3.27.3** · Cross-platform UI framework
 - **Riverpod** · State management
 - **Drift (SQLite)** · Local database ORM
 - **Supabase / Self-hosted BeeCount Cloud / WebDAV / S3** · Multi-option cloud sync
@@ -229,17 +229,20 @@ Full Docker Compose deployment, backup system, PWA, and ops details live in the 
 ### Quick Start
 
 ```bash
+# Prerequisite: install FVM and pin the project SDK (version in .fvmrc)
+fvm use
+
 # Install dependencies
-flutter pub get
+fvm flutter pub get
 
 # Code generation
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 
 # Run app
-flutter run --flavor dev
+fvm flutter run --flavor dev
 
 # Build release
-flutter build apk --flavor prod --release
+fvm flutter build apk --flavor prod --release
 ```
 
 See [docs/contributing/CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for development conventions.
@@ -270,7 +273,7 @@ See [docs/contributing/CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for d
 
 "Theme color + skin = the header banner." Skins come in two kinds: **code skins** (`CustomPainter` drawing gradients / shapes, auto-following the theme color) and **image skins** (an SVG painted edge-to-edge with `BoxFit.cover`, optionally recolored to the theme color via `themed: true`).
 
-Easiest path: copy [`example_skin.svg`](assets/header_skins/example_skin.svg) → drop your SVG into `assets/header_skins/` → register one entry in `lib/styles/header_skins.dart` → add an i18n name and run `flutter gen-l10n`.
+Easiest path: copy [`example_skin.svg`](assets/header_skins/example_skin.svg) → drop your SVG into `assets/header_skins/` → register one entry in `lib/styles/header_skins.dart` → add an i18n name and run `fvm flutter gen-l10n`.
 
 **Full spec (SVG requirements + theme recoloring + integration steps): [assets/header_skins/README_EN.md](assets/header_skins/README_EN.md).**
 
