@@ -1,33 +1,57 @@
 # Linux 桌面无头 UI smoke（非支援平台）。
 #
-# 为什么要自带 mesa / libglvnd：
-#   `nix build .#linux` 出来的 bundle 只带 GTK，不带 GL。裸 Xvfb 没有 GLX 实现，
-#   Flutter 会打印「没有可用的 GL 实现」并退化成空白窗口（GTK 拿不到 GLArea）。
-#   这里用 pkgsFlutter 的 mesa + libglvnd（与 bundle 同一个 nixpkgs 实例，
-#   避免 glibc ABI 漂移），并强制 llvmpipe 软件渲染。
+# 为何不用 Xvfb：nixpkgs 的 Xvfb 根本不含 GLX（`Extension "GLX" is not recognized`），
+# 而 Flutter Linux embedder 需要 GL，Xvfb 下必然报「没有可用的 GL 实现」。
+# 这里改用 Weston 的 headless backend（Wayland）——无头、能跑 GL（llvmpipe）。
 #
-# 真实桌面预览请用 `nix run .#linux-run`（走宿主 GPU），不需要本包装器。
+# bundle 本身已自带 mesa/libglvnd 与 GL 环境（见 nix/linux.nix），这里只提供
+# 虚拟合成器并强制软件渲染，让无头/CI 不依赖 GPU/DRM。
 {
   pkgsFlutter,
   linuxDebug,
 }:
-let
-  mesa = pkgsFlutter.mesa;
-  libglvnd = pkgsFlutter.libglvnd;
-in
 pkgsFlutter.writeShellApplication {
   name = "beecount-linux-smoke";
-  # xvfb-run 已把 xorg.xvfb / xauth / getopt 等包进自己的 PATH。
-  runtimeInputs = [ pkgsFlutter.xvfb-run ];
+  runtimeInputs = [ pkgsFlutter.weston ];
   text = ''
     export LIBGL_ALWAYS_SOFTWARE=1
-    export GALLIUM_DRIVER=llvmpipe
-    export LIBGLX_VENDOR_LIBRARY_NAME=mesa
-    export LIBGL_DRIVERS_PATH="${mesa}/lib/dri"
-    export __EGL_VENDOR_LIBRARY_DIRS="${mesa}/share/glvnd/egl_vendor.d"
-    export LD_LIBRARY_PATH="${libglvnd}/lib:${mesa}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-    exec xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
-      "${linuxDebug}/bin/beecount" "$@"
+    runtime_dir="$(mktemp -d)"
+    chmod 700 "$runtime_dir"
+    export XDG_RUNTIME_DIR="$runtime_dir"
+
+    socket="beecount-smoke"
+    weston_pid=""
+    app_pid=""
+    cleanup() {
+      if [ -n "$app_pid" ]; then
+        kill "$app_pid" 2>/dev/null || true
+      fi
+      if [ -n "$weston_pid" ]; then
+        kill "$weston_pid" 2>/dev/null || true
+      fi
+      rm -rf "$runtime_dir"
+    }
+    trap cleanup EXIT INT TERM
+
+    # headless 输出给一个桌面尺寸，让 app 的手机比例视窗有合理的预设大小。
+    weston --backend=headless-backend.so --socket="$socket" \
+      --width=1920 --height=1080 --idle-time=0 --log=/dev/null &
+    weston_pid=$!
+
+    # 等合成器 socket 就绪。
+    for _ in $(seq 1 100); do
+      if [ -S "$runtime_dir/$socket" ]; then
+        break
+      fi
+      sleep 0.1
+    done
+
+    export WAYLAND_DISPLAY="$socket"
+    export GDK_BACKEND=wayland
+
+    "${linuxDebug}/bin/beecount" "$@" &
+    app_pid=$!
+    wait "$app_pid"
   '';
 }
