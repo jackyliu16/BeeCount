@@ -254,49 +254,55 @@ git push origin feature/your-feature-name
 
 ### System Requirements
 
-- **Flutter SDK**: 3.27.0 or higher
-- **Dart SDK**: 3.6.0 or higher
+- **Flutter SDK**: 3.27.3 (managed by FVM, version pinned in the root `.fvmrc`)
+- **Dart SDK**: 3.6.1 (bundled with Flutter 3.27.3, no separate install needed)
+- **FVM**: required, see installation steps below
 - **IDE**: VS Code or Android Studio (Flutter plugin recommended)
 - **OS**: macOS, Linux, or Windows
 
 ### Installation Steps
 
-1. **Install Flutter**
+1. **Install FVM**
 
-Visit [Flutter Official Site](https://flutter.dev/docs/get-started/install) and follow the instructions.
+This project uses [FVM](https://fvm.app) to pin the Flutter version. Do not rely on a globally installed Flutter SDK.
 
-Verify installation:
 ```bash
-flutter doctor
+dart pub global activate fvm
 ```
 
-2. **Clone Project**
+2. **Clone Project and Pin SDK**
 
 ```bash
 git clone https://github.com/TNT-Likely/BeeCount.git
 cd BeeCount
+
+# Install and pin the Flutter SDK declared in .fvmrc
+fvm use
+
+# Verify
+fvm flutter doctor
 ```
 
 3. **Install Dependencies**
 
 ```bash
-flutter pub get
+fvm flutter pub get
 ```
 
 4. **Run Code Generation**
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 ```
 
 5. **Run Application**
 
 ```bash
 # Android
-flutter run --flavor dev -d android
+fvm flutter run --flavor dev -d android
 
 # iOS
-flutter run -d ios
+fvm flutter run -d ios
 ```
 
 **Note**: Cloud service configuration is done through the app's UI (Profile → Cloud Service). No configuration file needed.
@@ -330,22 +336,22 @@ lib/
 
 ```bash
 # Run tests
-flutter test
+fvm flutter test
 
 # Format code
-dart format .
+fvm dart format .
 
 # Static analysis
-flutter analyze
+fvm flutter analyze
 
 # Build APK
-flutter build apk --flavor prod --release
+fvm flutter build apk --flavor prod --release
 
 # Regenerate code
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 
 # Watch file changes and auto-generate
-dart run build_runner watch
+fvm dart run build_runner watch
 ```
 
 ## Code Standards
@@ -361,7 +367,7 @@ Follow [Effective Dart](https://dart.dev/guides/language/effective-dart) guideli
    - Private members: prefix with `_`
 
 2. **Formatting**
-   - Use `dart format` for auto-formatting
+   - Use `fvm dart format` for auto-formatting
    - 80 character line limit
    - Use 2-space indentation
 
@@ -545,8 +551,8 @@ Closes #123
 
 ## Checklist
 - [ ] Code follows project standards
-- [ ] Ran `dart format` to format code
-- [ ] Ran `flutter analyze` with no warnings
+- [ ] Ran `fvm dart format` to format code
+- [ ] Ran `fvm flutter analyze` with no warnings
 - [ ] Updated relevant documentation
 - [ ] Commit messages follow convention
 ```
@@ -624,8 +630,8 @@ Copy the content of `app_en.arb` and translate all strings:
 3. **Test Translation**
 
 ```bash
-flutter pub get
-flutter run
+fvm flutter pub get
+fvm flutter run
 ```
 
 Switch to the new language in app settings and check the translation.

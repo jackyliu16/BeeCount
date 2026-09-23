@@ -26,7 +26,7 @@
 **使用方法：**
 
 ```bash
-dart scripts/i18n/check_status.dart
+fvm dart scripts/i18n/check_status.dart
 ```
 
 **工作流程：**
@@ -112,14 +112,14 @@ zh_TW    | app_zh_TW.arb   |    1064 |   100.0% | ✅ 完整
 - 如果选择清理（输入 `y`），脚本会：
   1. 从所有语言文件中删除对应的 keys 和元数据
   2. 格式化 JSON 文件
-  3. 提示运行 `flutter gen-l10n` 重新生成代码
+  3. 提示运行 `fvm flutter gen-l10n` 重新生成代码
 
 - 如果选择不清理（输入 `N` 或直接回车），会跳过清理步骤
 
 **清理后需要：**
 
 ```bash
-flutter gen-l10n
+fvm flutter gen-l10n
 ```
 
 ## 🔄 使用流程
@@ -129,14 +129,14 @@ flutter gen-l10n
 只需运行一个命令：
 
 ```bash
-dart scripts/i18n/check_status.dart
+fvm dart scripts/i18n/check_status.dart
 ```
 
 ### 完整工作流
 
 1. **运行检查脚本**
    ```bash
-   dart scripts/i18n/check_status.dart
+   fvm dart scripts/i18n/check_status.dart
    ```
 
 2. **根据提示选择是否清理**
@@ -145,7 +145,7 @@ dart scripts/i18n/check_status.dart
 
 3. **如果进行了清理，重新生成代码**
    ```bash
-   flutter gen-l10n
+   fvm flutter gen-l10n
    ```
 
 4. **提交更改**
@@ -207,5 +207,5 @@ dart scripts/i18n/check_status.dart
 
 1. **备份重要数据**：清理操作不可逆，建议提前 commit
 2. **仔细审查列表**：确认要删除的 keys 确实不需要
-3. **重新生成代码**：清理后务必运行 `flutter gen-l10n`
+3. **重新生成代码**：清理后务必运行 `fvm flutter gen-l10n`
 4. **测试应用**：清理后建议运行应用确保没有遗漏的翻译引用

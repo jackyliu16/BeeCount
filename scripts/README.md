@@ -27,13 +27,13 @@ scripts/
 
 ```bash
 # 验证中英文翻译完整性
-dart scripts/i18n/verify_translations.dart
+fvm dart scripts/i18n/verify_translations.dart
 
 # 检测未使用的 keys
-dart scripts/i18n/check_unused_i18n.dart
+fvm dart scripts/i18n/check_unused_i18n.dart
 
 # 清理未使用的 keys
-dart scripts/i18n/clean_unused_i18n.dart
+fvm dart scripts/i18n/clean_unused_i18n.dart
 ```
 
 ## 📦 未来计划
