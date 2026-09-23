@@ -71,3 +71,8 @@ tmp
 
 # 本地设计原型（不提交）
 design-prototypes/
+
+# Nix
+/result
+/result-*
+.direnv/
