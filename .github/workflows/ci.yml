@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Assert Flutter matches .fvmrc
+        run: |
+          set -euo pipefail
+          want=$(python3 -c "import json;print(json.load(open('.fvmrc'))['flutter'])")
+          got=$(flutter --version --machine | python3 -c "import json,sys;print(json.load(sys.stdin)['frameworkVersion'])")
+          echo "want=$want got=$got"
+          [ "$want" = "$got" ]
+
+      - name: Pub get
+        run: flutter pub get
+
+      # 只对 error 设门禁（flutter analyze 的 --fatal-infos/--fatal-warnings 默认 true，
+      # 当前仓库有 ~600 条 info/warning lint 债）；范围收窄到 lib/ + test/：
+      # packages/agentcore/test 用 package:test，根 pubspec.lock 里没有该包
+      # （补进去会连带把 drift 从 2.28 降到 2.26），整棵树的 analyze 会产生 140 条伪 error。
+      # 代价：packages/** 的 lint 与测试本轮不在门禁内。
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib test
+
+      - name: Test
+        run: flutter test
