@@ -44,6 +44,12 @@ let
         test -f "$out/sqlite3.c"
       '';
 
+  # Linux 桌面预览需要 GL，但 bundle 只带 GTK、不带 GL 驱动。宿主
+  # /run/opengl-driver 的 mesa 是用系统 glibc 编的，与密封 25.05 bundle 的
+  # ABI 不一致（实测加载失败）；因此自带同一 nixpkgs 实例的 mesa + libglvnd。
+  mesa = pkgsFlutter.mesa;
+  libglvnd = pkgsFlutter.libglvnd;
+
   mkLinux =
     { mode }:
     buildFlutterApplication ({
@@ -58,7 +64,21 @@ let
       buildInputs = [ sqlite ];
       # dart:ffi 用 DynamicLibrary.open('libsqlite3.so')，不吃 RUNPATH；
       # dart-fixup-hook 会把这里的 lib 目录包进 $out/bin/* 的 LD_LIBRARY_PATH。
-      runtimeDependencies = [ sqlite ];
+      # mesa/libglvnd 同理：bundle 自身不带 GL，靠这里提供可加载的 GL 实现。
+      runtimeDependencies = [
+        sqlite
+        mesa
+        libglvnd
+      ];
+
+      # 让 libglvnd 在自带 mesa 里找 vendor / DRI 驱动，而不是编译进去的
+      # /run/opengl-driver（那是宿主 glibc 编的，ABI 不合）。
+      # 注：这是预览目标，固定用 mesa；NVIDIA 闭源驱动不在覆盖范围。
+      extraWrapProgramArgs = ''
+        --set LIBGLX_VENDOR_LIBRARY_NAME mesa \
+        --set LIBGL_DRIVERS_PATH "${mesa}/lib/dri" \
+        --set __EGL_VENDOR_LIBRARY_DIRS "${mesa}/share/glvnd/egl_vendor.d"
+      '';
 
       # 刻意覆写 nixpkgs 预设的 `--split-debug-info="$debug"`：
       # debug 模式不需要（且未必支援）split-debug-info，两种模式共用同一条
