@@ -334,6 +334,27 @@ nix flake check                           # Nix 层门禁（密封 test + test-a
 - `analyze` 暂不入门禁：仓库还有约 600 条 info/warning lint 债，且密封环境下对 `packages/**` 做跨包分析会因 pub2nix 把 path 依赖装成独立 store 包而产生类型 identity 伪错误，故只对 `lib/` + `test/` 的 **error** 设门禁。
 - `packages/flutter_cloud_sync_webdav/test` 的 5 个用例仍在断言旧的邮箱登录行为，实现已改为抛 `UnsupportedError`；对齐前它们不进 CI 门禁。
 
+#### Linux 桌面预览（可选；非支援平台）
+
+Linux 桌面只用于 **UI smoke / 开发预览**，不是支援平台。日常验证的主力仍然是 `nix flake check`
+里的密封 `flutter test`（headless，不需要显示器，也不需要 `linux/` 目录）。
+
+```bash
+nix build .#linux              # Linux 桌面 debug 预览（最快）
+nix build .#linux-release      # Linux 桌面 release 产物（AOT）
+nix run   .#linux-run          # 真实桌面启动 debug 预览（需要显示器/GPU）
+nix run   .#linux-smoke        # 无头 UI smoke：Weston headless + 软件 GL（llvmpipe），不需要显示器/GPU
+nix develop .#linux            # 互动开发：flutter pub get && flutter run -d linux
+```
+
+说明：
+
+- **不入门禁**：`.#linux*` 与 `.#linux-smoke` 都不在 `nix flake check` / CI 里，避免把 native 建置时间与平台差异噪声带进门禁。
+- **不是支援平台**：没有 Linux 实作的插件（`permission_handler`、`local_auth`、`webview_flutter`、`gal`、`image_cropper`、`flutter_image_compress`、`in_app_review`、`quick_actions`、`open_filex`、`home_widget`、`in_app_purchase_storekit` …）在运行期会丢 `MissingPluginException`；启动路径大多已 try/catch，实测只有 `home_widget` 会打印警告。
+- **GL 由 bundle 自带**：`nix build` 出来的 bundle 只带 GTK、不带 GL 驱动；而宿主 `/run/opengl-driver` 的 mesa 与密封 bundle 的 glibc ABI 不一致（实测加载失败），裸跑会报「没有可用的 GL 实现」。所以 `nix/linux.nix` 把同一个 nixpkgs 实例的 mesa + libglvnd 放进 `runtimeDependencies`，并将 `LIBGL_DRIVERS_PATH` / `__EGL_VENDOR_LIBRARY_DIRS` / `LIBGLX_VENDOR_LIBRARY_NAME` 写进 run wrapper。预览目标固定用 mesa，NVIDIA 闭源驱动不在覆盖范围。`.#linux-smoke` 只是在此外加班 Weston headless + `LIBGL_ALWAYS_SOFTWARE=1`（无头确定性）。
+- **预览视窗尺寸**：视窗按手机逻辑尺寸（dp）开，预设依序取 390x844（现代主流）/ 360x780（Android 最常见宽度）/ 320x568（保底），挑第一个能放进当前显示器工作区的——`linux/runner/my_application.cc` 的视窗尺寸就是 Flutter 视口尺寸（Linux embedder 拿 GTK allocation 当逻辑尺寸），所以不能靠放大视窗来「放大画面」。想临时换尺寸（例如 412x915）用 `BEECOUNT_PREVIEW_SIZE=412x915 nix run .#linux-run`；启动日志会印出实际视口 dp（`[preview] Flutter 视口 390 x 844 dp`），拉伸视窗时同步更新。要在 HiDPI 屏上看得更大又不改布局，用 `GDK_SCALE=2`（Flutter 的 pixel_ratio 取 GTK 缩放因子，逻辑尺寸不变）。
+- **离线 sqlite**：`sqlite3_flutter_libs` 的 linux 外挂用 CMake `FetchContent` 从网络下载 sqlite3，而 Nix sandbox 无网。`nix/linux.nix` 用 `pkgsFlutter.sqlite.src` 解出 amalgamation 源并通过 `BEECOUNT_SQLITE3_SOURCE_DIR` 传给 `linux/CMakeLists.txt` 覆写来源；非 Nix 环境未设该变量时维持原本下载行为。
+
 **升级 Flutter 版本**：改 `.fvmrc` 后需同步生成密封数据，否则 flake 评估会报错：
 
 ```bash
