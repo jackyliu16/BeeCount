@@ -48,10 +48,10 @@ Template: [`example_skin.svg`](example_skin.svg).
    ),
    ```
    (For a code skin, have `builder` return your own `CustomPaint` — see `_AuroraSkin` etc. in the same file.)
-3. Add a display name `headerSkinMySkin` to each of `lib/l10n/app_zh.arb` / `app_en.arb` / `app_zh_TW.arb`, then run `flutter gen-l10n`.
+3. Add a display name `headerSkinMySkin` to each of `lib/l10n/app_zh.arb` / `app_en.arb` / `app_zh_TW.arb`, then run `fvm flutter gen-l10n`.
 
 ## Self-check
-- `flutter analyze` passes with no errors.
+- `fvm flutter analyze` passes with no errors.
 - Switch to the skin on a device/simulator: **no black block** (a black block = `<style>` was used), the crop composition looks right, it looks good across different theme colors, and it's readable in both light and dark modes.
 
 Open a PR when done 🎨

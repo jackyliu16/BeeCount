@@ -255,49 +255,55 @@ git push origin feature/your-feature-name
 
 ### 系统要求
 
-- **Flutter SDK**: 3.27.0 或更高版本
-- **Dart SDK**: 3.6.0 或更高版本
+- **Flutter SDK**: 3.27.3（由 FVM 管理，版本锁定在根目录 `.fvmrc`）
+- **Dart SDK**: 3.6.1（随 Flutter 3.27.3 提供，无需单独安装）
+- **FVM**: 必装，见下方安装步骤
 - **IDE**: VS Code 或 Android Studio（推荐安装 Flutter 插件）
 - **操作系统**: macOS, Linux, 或 Windows
 
 ### 安装步骤
 
-1. **安装 Flutter**
+1. **安装 FVM**
 
-访问 [Flutter 官网](https://flutter.dev/docs/get-started/install) 按照指引安装。
+本项目使用 [FVM](https://fvm.app) 锁定 Flutter 版本，请勿直接依赖全局 Flutter SDK。
 
-验证安装：
 ```bash
-flutter doctor
+dart pub global activate fvm
 ```
 
-2. **Clone 项目**
+2. **Clone 项目并锁定 SDK**
 
 ```bash
 git clone https://github.com/TNT-Likely/BeeCount.git
 cd BeeCount
+
+# 按 .fvmrc 安装并锁定项目 Flutter SDK
+fvm use
+
+# 验证
+fvm flutter doctor
 ```
 
 3. **安装依赖**
 
 ```bash
-flutter pub get
+fvm flutter pub get
 ```
 
 4. **运行代码生成**
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 ```
 
 5. **运行应用**
 
 ```bash
 # Android
-flutter run --flavor dev -d android
+fvm flutter run --flavor dev -d android
 
 # iOS
-flutter run -d ios
+fvm flutter run -d ios
 ```
 
 **注意**: 云服务配置通过应用内 UI 完成（个人中心 → 云服务），无需配置文件。
@@ -390,22 +396,22 @@ lib/
 
 ```bash
 # 运行测试
-flutter test
+fvm flutter test
 
 # 代码格式化
-dart format .
+fvm dart format .
 
 # 静态分析
-flutter analyze
+fvm flutter analyze
 
 # 构建 APK
-flutter build apk --flavor prod --release
+fvm flutter build apk --flavor prod --release
 
 # 重新生成代码
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 
 # 监听文件变化自动生成
-dart run build_runner watch
+fvm dart run build_runner watch
 ```
 
 ## 代码规范
@@ -421,7 +427,7 @@ dart run build_runner watch
    - 私有成员：以 `_` 开头
 
 2. **格式化**
-   - 使用 `dart format` 自动格式化
+   - 使用 `fvm dart format` 自动格式化
    - 行宽限制 80 字符
    - 使用 2 空格缩进
 
@@ -605,8 +611,8 @@ Closes #123
 
 ## 检查清单
 - [ ] 代码遵循项目规范
-- [ ] 已运行 `dart format` 格式化代码
-- [ ] 已运行 `flutter analyze` 无警告
+- [ ] 已运行 `fvm dart format` 格式化代码
+- [ ] 已运行 `fvm flutter analyze` 无警告
 - [ ] 已更新相关文档
 - [ ] 提交信息符合规范
 ```
@@ -684,8 +690,8 @@ lib/l10n/app_it.arb
 3. **测试翻译**
 
 ```bash
-flutter pub get
-flutter run
+fvm flutter pub get
+fvm flutter run
 ```
 
 在应用设置中切换到新语言，检查翻译效果。

@@ -235,7 +235,7 @@ amount 是硬要求(没有就丢);time 软兜底,记到当前时间。
 | `test/ai/core/ai_extraction_context_test.dart` | forLedger 真 DB 集成 / 币种过滤 |
 | `test/services/ai/ai_bookkeeper_test.dart` | 单笔 / 多笔 / 失败 / ledgerId 注入 / recognizedText |
 
-跑全部:`flutter test test/ai/ test/services/ai/`
+跑全部:`fvm flutter test test/ai/ test/services/ai/`
 
 ---
 

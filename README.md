@@ -7,7 +7,7 @@
 ![Release](https://img.shields.io/github/v/release/TNT-Likely/BeeCount?label=latest&color=green)
 ![Downloads](https://img.shields.io/github/downloads/TNT-Likely/BeeCount/total?color=blue)
 ![Last commit](https://img.shields.io/github/last-commit/TNT-Likely/BeeCount)
-![Flutter](https://img.shields.io/badge/Flutter-3.27%2B-02569B?logo=flutter)
+![Flutter](https://img.shields.io/badge/Flutter-3.27.3-02569B?logo=flutter)
 
 **你的数据,你做主的开源记账应用**
 
@@ -221,7 +221,7 @@
 
 ### 技术栈
 
-- **Flutter 3.27+** · 跨平台 UI 框架
+- **Flutter 3.27.3** · 跨平台 UI 框架
 - **Riverpod** · 状态管理
 - **Drift (SQLite)** · 本地数据库 ORM
 - **Supabase / 自建 BeeCount Cloud / WebDAV / S3** · 云端同步多方案
@@ -229,17 +229,20 @@
 ### 快速开始
 
 ```bash
+# 前置条件:安装 FVM 并锁定项目 SDK(版本见 .fvmrc)
+fvm use
+
 # 安装依赖
-flutter pub get
+fvm flutter pub get
 
 # 代码生成
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 
 # 运行应用
-flutter run --flavor dev
+fvm flutter run --flavor dev
 
 # 构建发布
-flutter build apk --flavor prod --release
+fvm flutter build apk --flavor prod --release
 ```
 
 更多开发规范见 [docs/contributing/CONTRIBUTING_ZH.md](docs/contributing/CONTRIBUTING_ZH.md)。
@@ -270,7 +273,7 @@ flutter build apk --flavor prod --release
 
 「主题色 + 皮肤 = 顶部头图」。皮肤分**代码皮肤**(`CustomPainter` 画渐变 / 几何,跟随主题色)和**图片皮肤**(SVG,`BoxFit.cover` 铺满头部,可整幅染成主题色)两类。
 
-最简单的方式:照着 [`example_skin.svg`](assets/header_skins/example_skin.svg) 画一张 SVG → 丢进 `assets/header_skins/` → 在 `lib/styles/header_skins.dart` 注册一条 → 加 i18n 名跑 `flutter gen-l10n`。
+最简单的方式:照着 [`example_skin.svg`](assets/header_skins/example_skin.svg) 画一张 SVG → 丢进 `assets/header_skins/` → 在 `lib/styles/header_skins.dart` 注册一条 → 加 i18n 名跑 `fvm flutter gen-l10n`。
 
 **完整规范(SVG 要求 + 主题色着色 + 接入步骤)见 [assets/header_skins/README.md](assets/header_skins/README.md)。**
 

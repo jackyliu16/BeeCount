@@ -13,7 +13,7 @@
 /// Flutter SDK 的 MaterialIcons 字体,且产物是二进制资源不是断言):
 ///
 /// ```bash
-/// GEN_WIDGET_PREVIEWS=1 noproxy flutter test \
+/// GEN_WIDGET_PREVIEWS=1 noproxy fvm flutter test \
 ///     test/widget/widget_preview_generator_test.dart
 /// ```
 ///
