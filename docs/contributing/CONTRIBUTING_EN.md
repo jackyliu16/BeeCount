@@ -309,7 +309,7 @@ The repo ships a `flake.nix` that gives NixOS / Nix users a **reproducible toolc
 # Enter the dev shell (FVM + JDK17 + Android SDK/NDK + Python, etc.)
 nix develop
 
-# First run still installs the SDK via FVM according to .fvmrc
+# First run still installs the SDK via FVM according to .fvmrc (fails by default on NixOS — see the NixOS note below)
 fvm install && fvm flutter pub get
 ```
 
@@ -328,6 +328,7 @@ nix flake check                           # Nix-level gate (hermetic test + test
 
 Notes:
 
+- **NixOS note**: `fvm` downloads a generic-Linux build, and NixOS deliberately ships no FHS dynamic linker (`/lib64/ld-linux-x86-64.so.2` is a stub that only prints an error), so the `fvm flutter pub get` above fails by default (the `nix develop` shellHook says so). Two ways out: ① skip FVM and use the hermetic entry point `nix run .#flutter -- pub get`; ② enable `programs.nix-ld.enable = true` in your system config (add `stdenv.cc.cc.lib` and friends as needed) and log back in so FVM's SDK can run. Also note that drift/sqlite cases in `flutter test` dlopen `libsqlite3.so` at runtime, so use `nix run .#flutter-test` (the wrapper sets `LD_LIBRARY_PATH`).
 - `nix build .#test` and `.#test-agentcore` are both part of `nix flake check`; changes under `lib/**`, `test/**`, `packages/**` run them in the CI Nix workflow.
 - `analyze` is intentionally not a flake check yet: the repo still carries ~600 info/warning lint debts, and cross-package analysis inside the hermetic environment yields type-identity false positives (pub2nix installs path dependencies as standalone store packages), so only **errors** in `lib/` + `test/` are gated.
 - 5 cases in `packages/flutter_cloud_sync_webdav/test` still assert the old email sign-in behaviour while the implementation throws `UnsupportedError`; they stay out of the CI gate until aligned.

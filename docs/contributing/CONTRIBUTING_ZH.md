@@ -310,7 +310,7 @@ flutter run -d ios
 # 进入开发 shell（FVM + JDK17 + Android SDK/NDK + Python 等）
 nix develop
 
-# 首次仍需用 FVM 按 .fvmrc 安装 SDK
+# 首次仍需用 FVM 按 .fvmrc 安装 SDK（NixOS 默认跑不起来，见下方「NixOS 注意」）
 fvm install && fvm flutter pub get
 ```
 
@@ -329,6 +329,7 @@ nix flake check                           # Nix 层门禁（密封 test + test-a
 
 说明：
 
+- **NixOS 注意**：`fvm` 下载的是通用 Linux 构建，而 NixOS 按设计不提供 FHS 动态链接器（`/lib64/ld-linux-x86-64.so.2` 是只会报错的 stub），所以上面的 `fvm flutter pub get` 默认会失败（`nix develop` 的 shellHook 也会提示）。两条出路：① 不用 FVM，直接走密封入口 `nix run .#flutter -- pub get`；② 在系统配置启用 `programs.nix-ld.enable = true`（按需补 `stdenv.cc.cc.lib` 等库）并重新登录，让 FVM 的 SDK 能运行。另外 `flutter test` 里的 drift/sqlite 用例运行期要 dlopen `libsqlite3.so`，请用 `nix run .#flutter-test`（包装器已设好 `LD_LIBRARY_PATH`）。
 - `nix build .#test` 与 `test-agentcore` 都是 `nix flake check` 的一部分，改 `lib/**`、`test/**`、`packages/**` 会在 CI 的 Nix workflow 里跑。
 - `analyze` 暂不入门禁：仓库还有约 600 条 info/warning lint 债，且密封环境下对 `packages/**` 做跨包分析会因 pub2nix 把 path 依赖装成独立 store 包而产生类型 identity 伪错误，故只对 `lib/` + `test/` 的 **error** 设门禁。
 - `packages/flutter_cloud_sync_webdav/test` 的 5 个用例仍在断言旧的邮箱登录行为，实现已改为抛 `UnsupportedError`；对齐前它们不进 CI 门禁。
