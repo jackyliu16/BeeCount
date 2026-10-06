@@ -48,10 +48,10 @@
    ),
    ```
    (代码皮肤则让 `builder` 返回自己的 `CustomPaint`,可参考同文件的 `_AuroraSkin` 等。)
-3. 在 `lib/l10n/app_zh.arb` / `app_en.arb` / `app_zh_TW.arb` 各加一个显示名 `headerSkinMySkin`,跑 `flutter gen-l10n`。
+3. 在 `lib/l10n/app_zh.arb` / `app_en.arb` / `app_zh_TW.arb` 各加一个显示名 `headerSkinMySkin`,跑 `fvm flutter gen-l10n`。
 
 ## 自检
-- `flutter analyze` 无报错。
+- `fvm flutter analyze` 无报错。
 - 真机/模拟器切到该皮肤:**没有黑块**(黑块 = 用了 `<style>`)、裁切构图合理、换不同主题色都好看、亮 / 暗模式都可读。
 
 完成后提 PR 即可 🎨

@@ -8,7 +8,7 @@
 /// 4. 提供清理选项
 ///
 /// 使用方法：
-/// dart scripts/i18n/check_status.dart
+/// fvm dart scripts/i18n/check_status.dart
 
 import 'dart:io';
 import 'dart:convert';
@@ -487,5 +487,5 @@ Future<void> cleanUnusedKeys(List<String> unusedKeys) async {
 
   print('');
   print('✅ 清理未使用 keys 完成！共删除 ${unusedKeys.length} 个键');
-  print('💡 请运行 flutter gen-l10n 重新生成本地化代码');
+  print('💡 请运行 fvm flutter gen-l10n 重新生成本地化代码');
 }
